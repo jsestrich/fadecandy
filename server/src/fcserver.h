@@ -26,6 +26,7 @@
 #include "opc.h"
 #include "tcpnetserver.h"
 #include "usbdevice.h"
+#include "opctcpdevice.h"
 #include <sstream>
 #include <vector>
 #include <libusb.h>
@@ -58,10 +59,13 @@ private:
 
     TcpNetServer mTcpNetServer;
     tthread::recursive_mutex mEventMutex;
-    tthread::thread *mUSBHotplugThread;    
+    tthread::thread *mUSBHotplugThread;
 
     std::vector<USBDevice*> mUSBDevices;
     struct libusb_context *mUSB;
+
+    std::vector<OpcTcpDevice*> mOpcTcpDevices;
+    tthread::thread *mOpcTcpDevicePollThread;
 
     static void cbOpcMessage(OPC::Message &msg, void *context);
     static void cbJsonMessage(libwebsocket *wsi, rapidjson::Document &message, void *context);
@@ -74,7 +78,10 @@ private:
     void usbDeviceLeft(std::vector<USBDevice*>::iterator iter);
     bool usbHotplugPoll();
 
+    bool opcTcpDevicePoll();
+
     static void usbHotplugThreadFunc(void *arg);
+    static void opcTcpDevicePollThreadFunc(void *arg);
 
     // JSON event broadcasters
     void jsonConnectedDevicesChanged();

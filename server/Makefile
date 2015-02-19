@@ -12,7 +12,8 @@ CPP_FILES += \
 	src/fcserver.cpp \
 	src/version.cpp \
 	src/tinythread.cpp \
-	src/httpdocs.cpp
+	src/httpdocs.cpp \
+	src/opctcpdevice.cpp
 
 INCLUDES += -Isrc
 CLEAN_FILES += src/*.d src/*.o src/httpdocs.cpp
@@ -54,6 +55,8 @@ ifneq ("$(MINGW)", "")
 	LDFLAGS += -static
 	PACK_CMD := upx\upx391w.exe $(TARGET)
 endif
+
+DEBUG=1
 
 ifneq ("$(DEBUG)", "")
 	# Debug build

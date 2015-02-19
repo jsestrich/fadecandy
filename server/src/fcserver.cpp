@@ -26,6 +26,7 @@
 #include "fcdevice.h"
 #include "version.h"
 #include "enttecdmxdevice.h"
+#include "opctcpdevice.h"
 #include <ctype.h>
 #include <iostream>
 
@@ -66,6 +67,8 @@ FCServer::FCServer(rapidjson::Document &config)
     /*
      * Minimal validation on 'devices'
      */
+    OpcTcpDevice* dev = new OpcTcpDevice(true);
+    mOpcTcpDevices.push_back(dev);
 
     if (!mDevices.IsArray()) {
         mError << "The required 'devices' configuration key must be an array.\n";
@@ -99,6 +102,8 @@ bool FCServer::startUSB(libusb_context *usb)
     if (!libusb_has_capability(LIBUSB_CAP_HAS_HOTPLUG)) {
         mUSBHotplugThread = new tthread::thread(usbHotplugThreadFunc, this);
     }
+    mOpcTcpDevicePollThread =
+        new tthread::thread(opcTcpDevicePollThreadFunc, this);
 
     return true;
 }
@@ -108,13 +113,18 @@ void FCServer::cbOpcMessage(OPC::Message &msg, void *context)
     /*
      * Broadcast the OPC message to all configured devices.
      */
-
     FCServer *self = static_cast<FCServer*>(context);
     self->mEventMutex.lock();
 
     for (std::vector<USBDevice*>::iterator i = self->mUSBDevices.begin(), e = self->mUSBDevices.end(); i != e; ++i) {
         USBDevice *dev = *i;
         dev->writeMessage(msg);
+    }
+    for (std::vector<OpcTcpDevice*>::iterator i = self->mOpcTcpDevices.begin();
+         i != self->mOpcTcpDevices.end();
+         ++i) {
+      OpcTcpDevice *dev = *i;
+      dev->writeMessage(msg);
     }
 
     self->mEventMutex.unlock();
@@ -264,6 +274,17 @@ void FCServer::mainLoop()
     }
 }
 
+bool FCServer::opcTcpDevicePoll()
+{
+  for (std::vector<OpcTcpDevice*>::iterator i = mOpcTcpDevices.begin();
+       i != mOpcTcpDevices.end();
+       ++i) {
+    OpcTcpDevice *dev = *i;
+    dev->attemptOpen();
+  }
+  return true;
+}
+
 bool FCServer::usbHotplugPoll()
 {
     /*
@@ -328,6 +349,15 @@ bool FCServer::usbHotplugPoll()
     return true;
 }
 
+void FCServer::opcTcpDevicePollThreadFunc(void *arg)
+{
+    FCServer *self = (FCServer*) arg;
+
+    while (self->opcTcpDevicePoll()) {
+      tthread::this_thread::sleep_for(tthread::chrono::seconds(1));
+    }
+}
+
 void FCServer::usbHotplugThreadFunc(void *arg)
 {
     FCServer *self = (FCServer*) arg;
@@ -341,6 +371,8 @@ void FCServer::cbJsonMessage(libwebsocket *wsi, rapidjson::Document &message, vo
 {
     // Received a JSON message from a WebSockets client.
     // Replies are formed by modifying the original message.
+
+  std::clog << "cbJsonMessage\n" << std::endl;
 
     FCServer *self = (FCServer*) context;
 
