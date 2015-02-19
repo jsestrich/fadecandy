@@ -3,6 +3,8 @@
 
 manifest = [
     ('/', 'index.html', 'text/html'),
+    ('/play.html', 'play.html', 'text/html'),
+    ('/play.js', 'play.js', 'text/javascript'),
 
     # Images
     ('/media/favicon.png', None, 'image/png'),
