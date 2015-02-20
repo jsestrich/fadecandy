@@ -8,13 +8,12 @@ OpcTcpDevice::~OpcTcpDevice() {
 }
 
 int OpcTcpDevice::attemptOpen() {
-  printf("%d", mClient.tryConnect());
+  return mClient.tryConnect();
 }
 
 void OpcTcpDevice::writeMessage(const OPC::Message &msg) {
   if (mClient.isConnected()) {
     int length = OPC::HEADER_BYTES + msg.length();
-    printf("msg: %d\n", length);
     uint8_t *data = (uint8_t *)malloc(length);
     data[0] = msg.channel;
     data[1] = msg.command;

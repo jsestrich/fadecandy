@@ -47,6 +47,7 @@ setInterval(
       console.log(index)
       var range = rangesObj.ranges[index];
       var invert = (rangesObj.i % 2) == 0;
+      var invert = false
       var state = range.start == 0 ? 'middle' : 'begin'
       var data = [0,0,0,0];
       for (var i = 0; i < rangesObj.highestPixel; i++) {
@@ -74,4 +75,4 @@ setInterval(
       }
       ws.send(new Uint8Array(data));
     },
-    2000);
+    100);
