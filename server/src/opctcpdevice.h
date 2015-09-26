@@ -12,7 +12,7 @@ class OpcTcpDevice
   typedef rapidjson::Document Document;
   typedef rapidjson::MemoryPoolAllocator<> Allocator;
 
-  OpcTcpDevice(bool verbose);
+  OpcTcpDevice(const std::string& host, const int port, bool verbose);
   virtual ~OpcTcpDevice();
 
   virtual int attemptOpen();

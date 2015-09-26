@@ -1,7 +1,9 @@
 #include "opctcpdevice.h"
 
-OpcTcpDevice::OpcTcpDevice(bool verbose) {
-  mClient.resolve("jsestrich-desktop.chi.corp.google.com", 8081);
+OpcTcpDevice::OpcTcpDevice(const std::string& host,
+			   const int port,
+			   bool verbose) {
+  mClient.resolve(host.c_str(), port);
 }
 
 OpcTcpDevice::~OpcTcpDevice() {

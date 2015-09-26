@@ -56,8 +56,6 @@ ifneq ("$(MINGW)", "")
 	PACK_CMD := upx\upx391w.exe $(TARGET)
 endif
 
-DEBUG=1
-
 ifneq ("$(DEBUG)", "")
 	# Debug build
 	TARGET := debug-$(TARGET)

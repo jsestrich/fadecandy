@@ -30,6 +30,40 @@
 #include <ctype.h>
 #include <iostream>
 
+bool isGLServer(const rapidjson::Value& config) {
+  if (!config.IsObject()) {
+    return false;
+  }
+
+  const rapidjson::Value &vtype = config["type"];
+
+  if (vtype.IsNull() || !vtype.IsString()) {
+    return false;
+  }
+  
+  if (strcmp(vtype.GetString(), "gl_server")) {
+    return false;
+  }
+
+  return true;
+}
+
+// TODO(jsestrich) more verbose warnings if this fails.
+OpcTcpDevice* createOpcTcpDevice(const rapidjson::Value& config) {
+  if (!config.IsObject()) {
+    printf("not obj\n");
+    return NULL;
+  }
+
+  const rapidjson::Value &vport = config["port"];
+
+  if (vport.IsNull() || !vport.IsInt()) {
+    printf("Invalid port\n");
+    return NULL;
+  }
+  
+  return new OpcTcpDevice("localhost", vport.GetInt(), true);
+}
 
 FCServer::FCServer(rapidjson::Document &config)
     : mConfig(config),
@@ -45,7 +79,6 @@ FCServer::FCServer(rapidjson::Document &config)
     /*
      * Validate the listen [host, port] list.
      */
-
     if (mListen.IsArray() && mListen.Size() == 2) {
         const Value &host = mListen[0u];
         const Value &port = mListen[1];
@@ -67,11 +100,16 @@ FCServer::FCServer(rapidjson::Document &config)
     /*
      * Minimal validation on 'devices'
      */
-    OpcTcpDevice* dev = new OpcTcpDevice(true);
-    mOpcTcpDevices.push_back(dev);
-
     if (!mDevices.IsArray()) {
         mError << "The required 'devices' configuration key must be an array.\n";
+    }
+
+    // Connect and gl_server devices found
+    for (unsigned i = 0; i < mDevices.Size(); ++i) {
+      if (isGLServer(mDevices[i])) {
+	OpcTcpDevice* dev = createOpcTcpDevice(mDevices[i]);
+	if (dev) mOpcTcpDevices.push_back(dev);
+      }
     }
 }
 
